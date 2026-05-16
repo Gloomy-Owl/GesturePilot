@@ -1,0 +1,14 @@
+# виртуальное окружение
+.venv/
+venv/
+env/
+
+# кэш PyCharm
+.idea/
+
+# кэш питона
+__pycache__/
+*.pyc
+
+# модели MediaPipe (скачиваются скриптом автоматически)
+hand_landmarker.task
