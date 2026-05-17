@@ -5,7 +5,7 @@ from sklearn.metrics import accuracy_score
 import pickle
 
 print("Загружаем данные...")
-df = pd.read_csv('gestures_dataset.csv')
+df = pd.read_csv('data/gestures_dataset.csv')
 
 # Учитываем все 8 жестов
 df = df[df['label'].isin([1, 2, 3, 4, 5, 6, 7, 8])]
@@ -26,6 +26,6 @@ model.fit(X_train, y_train)
 predictions = model.predict(X_test)
 print(f"Точность Нейросети: {accuracy_score(y_test, predictions) * 100:.2f}%")
 
-with open('gesture_model.pkl', 'wb') as f:
+with open('models/gesture_model.pkl', 'wb') as f:
     pickle.dump(model, f)
 print("Мозг обновлен!")

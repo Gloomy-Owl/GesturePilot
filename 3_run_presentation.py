@@ -1,15 +1,20 @@
+import sys
 import cv2
 import mediapipe as mp
 import time
 import pickle
 import pyautogui
+import sklearn
 import os
 from collections import deque
 
 pyautogui.FAILSAFE = False
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(script_dir, 'gesture_model.pkl'), 'rb') as f:
+if getattr(sys, 'frozen', False):
+    script_dir = os.path.dirname(sys.executable)
+else:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(script_dir, 'models/gesture_model.pkl'), 'rb') as f:
     model = pickle.load(f)
 
 BaseOptions = mp.tasks.BaseOptions
