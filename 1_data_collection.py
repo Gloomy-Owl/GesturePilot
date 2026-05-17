@@ -10,7 +10,7 @@ CSV_FILE = os.path.join(script_dir, 'gestures_dataset.csv')
 model_path = os.path.join(script_dir, 'hand_landmarker.task')
 
 if not os.path.exists(model_path):
-    print("Скачиваю модель...")
+    print("Скачиваем модель...")
     urllib.request.urlretrieve(
         "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
         model_path)
@@ -54,15 +54,15 @@ cap = cv2.VideoCapture(0)
 
 counts = {i: 0 for i in range(1, 9)}  # Теперь 8 жестов
 
-print("=== СБОР 8 ЖЕСТОВ ===")
+print("Сбор жестов:")
 print("1 - Ладонь 🖐️ (Старт)")
-print("2 - Кулак ✊ (ХОЛОСТОЙ ХОД / ПАУЗА МЕЖДУ ЖЕСТАМИ)")
+print("2 - Кулак ✊ ( ПАУЗА МЕЖДУ ЖЕСТАМИ)")
 print("3 - Большой палец ВЛЕВО 👈 (Вперед / Вправо)")
 print("4 - Большой палец ВПРАВО 👉 (Назад / Влево)")
 print("5 - Два пальца ✌️ (Приблизить)")
 print("6 - Палец ВВЕРХ ☝️ (Экран Вверх)")
 print("7 - Палец ВНИЗ 👇 (Экран Вниз)")
-print("8 - Буква L 👆👈 (Отдалить обратно)")
+print("8 - Буква L 👆 (Отдалить обратно)")
 
 while cap.isOpened():
     success, frame = cap.read()

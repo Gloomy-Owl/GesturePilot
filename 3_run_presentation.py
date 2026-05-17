@@ -45,7 +45,7 @@ current_action_text = "Ожидание..."
 detector = HandLandmarker.create_from_options(options)
 cap = cv2.VideoCapture(0)
 
-print("GesturePilot Запущен! Кулак = Безопасный переход.")
+print("GesturePilot Запущен!")
 
 while cap.isOpened():
     success, frame = cap.read()
@@ -104,7 +104,7 @@ while cap.isOpened():
 
                     elif prediction == 8:
                         pyautogui.press('-')
-                        current_action_text = "БУКВА L 👆👈 -> ОТДАЛИТЬ (-)"
+                        current_action_text = "БУКВА L 👆 -> ОТДАЛИТЬ (-)"
 
                     last_action_gesture = prediction
 
