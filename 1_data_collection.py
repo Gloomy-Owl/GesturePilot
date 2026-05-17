@@ -3,11 +3,18 @@ import mediapipe as mp
 import os
 import time
 import csv
+import urllib.request
 
-# настройки датасета
-CSV_FILE = 'gestures_dataset.csv'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+CSV_FILE = os.path.join(script_dir, 'gestures_dataset.csv')
+model_path = os.path.join(script_dir, 'hand_landmarker.task')
 
-# создание файла
+if not os.path.exists(model_path):
+    print("Скачиваю модель...")
+    urllib.request.urlretrieve(
+        "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+        model_path)
+
 if not os.path.exists(CSV_FILE):
     with open(CSV_FILE, mode='w', newline='') as f:
         writer = csv.writer(f)
@@ -16,18 +23,13 @@ if not os.path.exists(CSV_FILE):
             header.extend([f'x{i}', f'y{i}', f'z{i}'])
         writer.writerow(header)
 
-# скачиваем модель
-model_path = 'hand_landmarker.task'
-
-# настраиваем айпи
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
-VisionRunningMode = mp.tasks.vision.RunningMode
 
 options = HandLandmarkerOptions(
     base_options=BaseOptions(model_asset_path=model_path),
-    running_mode=VisionRunningMode.VIDEO,
+    running_mode=mp.tasks.vision.RunningMode.VIDEO,
     num_hands=1
 )
 
@@ -47,17 +49,20 @@ def draw_landmarks(image, landmarks):
         cv2.line(image, pt1, pt2, (0, 255, 0), 2)
 
 
-# запускаем сбор данных
 detector = HandLandmarker.create_from_options(options)
 cap = cv2.VideoCapture(0)
 
-# счетчики для статистики на экране
-counts = {0: 0, 1: 0, 2: 0}
+counts = {i: 0 for i in range(1, 9)}  # Теперь 8 жестов
 
-print("Камера запущена. Инструкция по сбору:")
-print("Нажми и УДЕРЖИВАЙ '0', чтобы записывать ЛАДОНЬ")
-print("Нажми и УДЕРЖИВАЙ '1', чтобы записывать КУЛАК")
-print("Нажми и УДЕРЖИВАЙ '2', чтобы записывать УКАЗАТЕЛЬНЫЙ ПАЛЕЦ")
+print("=== СБОР 8 ЖЕСТОВ ===")
+print("1 - Ладонь 🖐️ (Старт)")
+print("2 - Кулак ✊ (ХОЛОСТОЙ ХОД / ПАУЗА МЕЖДУ ЖЕСТАМИ)")
+print("3 - Большой палец ВЛЕВО 👈 (Вперед / Вправо)")
+print("4 - Большой палец ВПРАВО 👉 (Назад / Влево)")
+print("5 - Два пальца ✌️ (Приблизить)")
+print("6 - Палец ВВЕРХ ☝️ (Экран Вверх)")
+print("7 - Палец ВНИЗ 👇 (Экран Вниз)")
+print("8 - Буква L 👆👈 (Отдалить обратно)")
 
 while cap.isOpened():
     success, frame = cap.read()
@@ -69,42 +74,32 @@ while cap.isOpened():
     timestamp = int(time.time() * 1000)
 
     result = detector.detect_for_video(mp_image, timestamp)
-
-    # обработка нажатий клавиш
     key = cv2.waitKey(1) & 0xFF
-    if key == 27:  # ESC
-        break
+    if key == 27: break
 
     if result.hand_landmarks:
         for hand_landmarks in result.hand_landmarks:
             draw_landmarks(frame, hand_landmarks)
 
-            if key in [ord('0'), ord('1'), ord('2')]:
+            # Слушаем кнопки от 1 до 8
+            if key in [ord(str(i)) for i in range(1, 9)]:
                 label = chr(key)
-
-                # координаты запястья
-                wrist_x = hand_landmarks[0].x
-                wrist_y = hand_landmarks[0].y
-                wrist_z = hand_landmarks[0].z
-
-                # формируем строку для CSV
+                wrist = hand_landmarks[0]
                 row = [label]
                 for lm in hand_landmarks:
-                    # вычитаем запястье, чтобы получить относительные координаты
-                    row.extend([lm.x - wrist_x, lm.y - wrist_y, lm.z - wrist_z])
+                    row.extend([lm.x - wrist.x, lm.y - wrist.y, lm.z - wrist.z])
 
-                # сохраняем в файл
                 with open(CSV_FILE, mode='a', newline='') as f:
                     writer = csv.writer(f)
                     writer.writerow(row)
 
                 counts[int(label)] += 1
 
-    # выводим статистику на экран
-    cv2.putText(frame, f"0(Palm): {counts[0]} | 1(Fist): {counts[1]} | 2(Point): {counts[2]}",
-                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
-    cv2.imshow('GesturePilot - Data Collection', frame)
+    stats1 = f"1:{counts[1]} 2:{counts[2]} 3:{counts[3]} 4:{counts[4]}"
+    stats2 = f"5:{counts[5]} 6:{counts[6]} 7:{counts[7]} 8:{counts[8]}"
+    cv2.putText(frame, stats1, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    cv2.putText(frame, stats2, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    cv2.imshow('Data Collection', frame)
 
 cap.release()
 cv2.destroyAllWindows()
