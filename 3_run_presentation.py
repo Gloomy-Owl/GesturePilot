@@ -1,12 +1,12 @@
-import sys
 import cv2
 import mediapipe as mp
 import time
 import pickle
 import pyautogui
-import sklearn
 import os
+import math
 from collections import deque
+import sys
 
 pyautogui.FAILSAFE = False
 
@@ -50,7 +50,7 @@ current_action_text = "Ожидание..."
 detector = HandLandmarker.create_from_options(options)
 cap = cv2.VideoCapture(0)
 
-print("GesturePilot Запущен!")
+print("GesturePilot: В работе!")
 
 while cap.isOpened():
     success, frame = cap.read()
@@ -72,7 +72,18 @@ while cap.isOpened():
             for lm in hand_landmarks:
                 row.extend([lm.x - wrist.x, lm.y - wrist.y, lm.z - wrist.z])
 
+            # Нейросеть делает свое предсказание
             prediction = model.predict([row])[0]
+
+            #  математическое правило от ложных срабатываний
+            if prediction in [3, 4]:
+                thumb_tip = hand_landmarks[4]
+                index_base = hand_landmarks[5]
+                distance = math.hypot(thumb_tip.x - index_base.x, thumb_tip.y - index_base.y)
+
+                if distance < 0.1:
+                    prediction = 2
+
             gesture_buffer.append(prediction)
 
             if gesture_buffer.count(prediction) == BUFFER_SIZE:
@@ -83,7 +94,6 @@ while cap.isOpened():
                         current_action_text = "ЛАДОНЬ -> F5 (Старт)"
 
                     elif prediction == 2:
-                        # МАГИЯ: МЫ НИЧЕГО НЕ НАЖИМАЕМ! Это просто смена позы.
                         current_action_text = "КУЛАК -> (Нейтральное состояние)"
                         pass
 
@@ -109,9 +119,10 @@ while cap.isOpened():
 
                     elif prediction == 8:
                         pyautogui.press('-')
-                        current_action_text = "БУКВА L 👆 -> ОТДАЛИТЬ (-)"
+                        current_action_text = "БУКВА L 👆👈 -> ОТДАЛИТЬ (-)"
 
                     last_action_gesture = prediction
+                    gesture_buffer.clear()
 
     else:
         gesture_buffer.clear()
